@@ -33,6 +33,6 @@ case class JmsRequestSendBuilder(attributes: JmsAttributes, configuration: Gatli
     import ctx._
     val jmsComponents = components(protocolComponentsRegistry)
     val statsEngine = coreComponents.statsEngine
-    new JmsRequestSend(attributes, jmsComponents.jmsProtocol, statsEngine, next)
+    new JmsRequestSend(attributes, jmsComponents.jmsProtocol, statsEngine, ctx.coreComponents, ctx.throttled, next)
   }
 }

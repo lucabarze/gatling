@@ -17,6 +17,7 @@ package io.gatling.jms.action
 
 import io.gatling.commons.stats.{ OK, Status }
 import io.gatling.commons.util.ClockSingleton.nowMillis
+import io.gatling.core.CoreComponents
 import io.gatling.core.action._
 import io.gatling.core.session.Session
 import io.gatling.core.stats.StatsEngine
@@ -31,7 +32,7 @@ import io.gatling.jms.request._
  *
  * This handles the core "send"ing of messages. Gatling calls the execute method to trigger a send.
  */
-class JmsRequestSend(val attributes: JmsAttributes, protocol: JmsProtocol, val statsEngine: StatsEngine, val next: Action)
+class JmsRequestSend(val attributes: JmsAttributes, protocol: JmsProtocol, val statsEngine: StatsEngine, val coreComponents: CoreComponents, val throttled: Boolean, val next: Action)
     extends ExitableAction with JmsAction[JmsSendClient] with NameGen {
 
   override val name = genName("jmsSend")
@@ -53,7 +54,11 @@ class JmsRequestSend(val attributes: JmsAttributes, protocol: JmsProtocol, val s
         if (logger.underlying.isDebugEnabled) {
           logMessage(s"Message sent JMSMessageID=${msg.getJMSMessageID}", msg)
         }
-        executeNext(session, startDate, endDate, OK, next, attributes.requestName)
+        if (throttled) {
+          coreComponents.throttler.throttle(session.scenario, () => executeNext(session, startDate, endDate, OK, next, attributes.requestName))
+        } else {
+          executeNext(session, startDate, endDate, OK, next, attributes.requestName)
+        }
     }
   }
 
